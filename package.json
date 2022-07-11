@@ -10,13 +10,14 @@
   "scripts": {
     "clean": "rm -rf ./lib",
     "dev": "npm run clean && tsc --watch",
-    "test": "node --experimental-specifier-resolution=node ./bin/cli-es6.js ~/dev/klaud-haus"
+    "test": "rm -rf ~/dev/klaud-haus/src/gen && node --experimental-specifier-resolution=node ./bin/cli-es6.js ~/dev/klaud-haus"
   },
   "author": "tim@klaud.haus",
   "license": "MIT",
   "dependencies": {
     "commander": "^9.3.0",
     "hastscript": "^7.0.2",
+    "mdast-util-directive": "^2.2.1",
     "rehype-raw": "^6.1.1",
     "rehype-slug": "^5.0.1",
     "rehype-stringify": "^9.0.3",
@@ -26,7 +27,8 @@
     "remark-rehype": "^10.1.0",
     "to-vfile": "^7.2.3",
     "ts-dedent": "^2.2.0",
-    "unified": "^10.1.2"
+    "unified": "^10.1.2",
+    "unist-util-visit": "^4.1.0"
   },
   "devDependencies": {
     "@metaliq/up": "^0.6.0",
@@ -38,6 +40,7 @@
     "eslint-plugin-n": "^15.2.4",
     "eslint-plugin-promise": "^6.0.0",
     "lit": "^2.2.7",
+    "mdast": "^3.0.0",
     "metaliq": "^0.30.0",
     "typescript": "^4.7.4"
   }
