@@ -4,14 +4,18 @@
   "description": "Meta document support for MetaliQ",
   "main": "lib/index.js",
   "type": "module",
+  "bin": {
+    "metadoc": "bin/cli-es6.js"
+  },
   "scripts": {
     "clean": "rm -rf ./lib",
     "dev": "npm run clean && tsc --watch",
-    "test": ""
+    "test": "node --experimental-specifier-resolution=node ./bin/cli-es6.js ~/dev/klaud-haus"
   },
   "author": "tim@klaud.haus",
   "license": "MIT",
   "dependencies": {
+    "commander": "^9.3.0",
     "hastscript": "^7.0.2",
     "rehype-raw": "^6.1.1",
     "rehype-slug": "^5.0.1",

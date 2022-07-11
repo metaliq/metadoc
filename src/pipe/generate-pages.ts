@@ -9,7 +9,7 @@ import { dedent } from "ts-dedent"
 import { readFile } from "fs/promises"
 import rehypeRaw from "rehype-raw"
 
-export async function generatePages (pages: string[]) {
+export async function generatePages (dir: string, pages: string[]) {
   const processor = await unified()
     .use(remarkParse)
     .use(remarkRehype, { allowDangerousHtml: true })
@@ -18,7 +18,7 @@ export async function generatePages (pages: string[]) {
     .use(rehypeSlug)
 
   for (const page of pages) {
-    const path = Path.join(process.cwd(), "content", `${page}.md`)
+    const path = Path.join(dir, "content", `${page}.md`)
 
     // TODO: Revert to using v-file read
     const content = await readFile(path, "utf8")
@@ -58,7 +58,7 @@ export async function generatePages (pages: string[]) {
     `
 
     await write({
-      path: Path.join(process.cwd(), "src", "gen", `${page}.ts`),
+      path: Path.join(dir, "src", "gen", `${page}.ts`),
       value: output
     })
   }
