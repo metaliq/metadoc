@@ -1,5 +1,5 @@
 import { read, write } from "to-vfile"
-import { Plugin, unified } from "unified"
+import { unified } from "unified"
 import remarkParse from "remark-parse"
 import remarkDirective from "remark-directive"
 import remarkRehype from "remark-rehype"
@@ -8,77 +8,51 @@ import rehypeSlug from "rehype-slug"
 import Path from "path"
 import { dedent } from "ts-dedent"
 import rehypeRaw from "rehype-raw"
-import { Node, visit } from "unist-util-visit"
-import { h } from "hastscript"
-import { Directive } from "mdast-util-directive"
+import { directiveInterpreter } from "./directive-interpreter"
+import { Import, ModuleData } from "./types"
+
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkDirective)
+  .use(directiveInterpreter)
+  .use(remarkRehype, { allowDangerousHtml: true })
+  .use(rehypeRaw)
+  .use(rehypeStringify)
+  .use(rehypeSlug)
 
 export async function generatePages (dir: string, pages: string[]) {
-  const processor = await unified()
-    .use(remarkParse)
-    .use(remarkDirective)
-    .use(remarkHtmlDirectivePlugin)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw)
-    .use(rehypeStringify)
-    .use(rehypeSlug)
-
+  const processorData = processor.data()
   for (const page of pages) {
-    const path = Path.join(dir, "content", `${page}.md`)
+    const inPath = Path.join(dir, "content", `${page}.md`)
+    const outPath = Path.join(dir, "src", "gen", `${page}.ts`)
 
-    // TODO: Revert to using v-file read
-    // const content = await readFile(path, "utf8")
-    //
-    // // TODO: Implement as unified plugin
-    // const lines = content.split("\n")
-    // const newLines = lines.map(line => {
-    //   if (line.match(/^\w*@/)) {
-    //     const tag = line.trim().substr(1) // Content of tag after @
-    //     const name = tag.split(" ")[0].split(/[^\w-]/)[0] || "div"
-    //     const classes = tag.match(/\.(\S*)/g).map(c => c.substr(1))
-    //     const html = `<${name} class="${classes}">`
-    //     return new Array(line.search("@")).fill(" ").join() + html
-    //   } else if (line.match(/^\S*}$/)) { // TODO: Proper handling of nesting / inner content
-    //     return "</div>"
-    //   } else {
-    //     return line
-    //   }
-    // })
-
-    // const newContent = newLines.join("\n")
-
-    const file = await processor
-      // .process(newContent)
-      // TODO: Reinstate v-file as process source
-      .process(await read(path))
-
+    processorData.moduleData = {}
+    const file = await processor.process(await read(inPath))
+    const moduleData: ModuleData = processorData.moduleData
+    moduleData.imports = moduleData.imports || []
+    moduleData.viewName = page
     const html = file.value.toString()
+    const value = htmlTs(html, moduleData)
 
-    const output = dedent`
-      import { html } from "lit"
-
-      export const ${page} = () => html\`
-        ${html.trim()}
-      \`
-      
-    `
-
-    await write({
-      path: Path.join(dir, "src", "gen", `${page}.ts`),
-      value: output
-    })
+    await write({ path: outPath, value })
   }
 }
 
-const remarkHtmlDirectivePlugin: Plugin<[], Node> = () => (ast) => {
-  visit(ast, (node) => {
-    if (["textDirective", "leafDirective", "containerDirective"].includes(node.type)) {
-      console.log(node)
-      const directive = node as Directive
-      const data = directive.data || (directive.data = {})
-      const hast = h(directive.name, directive.attributes)
+const htmlTs = (html: string, moduleData: ModuleData) => {
+  const imports: Import[] = [
+    { id: "html", from: "lit" },
+    { id: "MetaView", from: "metaliq/lib/policies/presentation/presentation" },
+    ...moduleData.imports
+  ]
 
-      data.hName = hast.tagName
-      data.hProperties = hast.properties
-    }
-  })
+  const importsTs = imports.map(i => `import { ${i.id} } from "${i.from}"`).join("\n")
+
+  const ts = dedent`
+    ${importsTs}
+
+    export const ${moduleData.viewName}: MetaView<${moduleData.metaType || "any"}> = (${moduleData.metaName ?? ""}) => html\`
+      ${html.trim()}
+    \`
+  `
+  return ts
 }
