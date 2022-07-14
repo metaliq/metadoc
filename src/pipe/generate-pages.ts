@@ -10,9 +10,11 @@ import { dedent } from "ts-dedent"
 import rehypeRaw from "rehype-raw"
 import { directiveInterpreter } from "./directive-interpreter"
 import { Import, ModuleData } from "./types"
+import { remarkMetaCode } from "./remark-meta-code"
 
 const processor = unified()
   .use(remarkParse)
+  .use(remarkMetaCode)
   .use(remarkDirective)
   .use(directiveInterpreter)
   .use(remarkRehype, { allowDangerousHtml: true })
@@ -32,7 +34,9 @@ export async function generatePages (dir: string, pages: string[]) {
     moduleData.imports = moduleData.imports || []
     moduleData.viewName = page
     const html = file.value.toString()
-    const value = htmlTs(html, moduleData)
+    // TODO: Proper fix to prevent munging embedded tags in code expressions
+    const fixTags = html.replace(/&#x3C;/g, "<")
+    const value = htmlTs(fixTags, moduleData)
 
     await write({ path: outPath, value })
   }

@@ -17,6 +17,7 @@
   "dependencies": {
     "commander": "^9.3.0",
     "hastscript": "^7.0.2",
+    "mdast-builder": "^1.1.1",
     "mdast-util-directive": "^2.2.1",
     "rehype-raw": "^6.1.1",
     "rehype-slug": "^5.0.1",
@@ -28,6 +29,7 @@
     "to-vfile": "^7.2.3",
     "ts-dedent": "^2.2.0",
     "unified": "^10.1.2",
+    "unist-util-is": "^5.1.1",
     "unist-util-visit": "^4.1.0"
   },
   "devDependencies": {
