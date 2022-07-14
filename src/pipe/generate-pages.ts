@@ -11,6 +11,7 @@ import rehypeRaw from "rehype-raw"
 import { directiveInterpreter } from "./directive-interpreter"
 import { Import, ModuleData } from "./types"
 import { remarkMetaCode } from "./remark-meta-code"
+import { capitalize } from "metaliq/lib/util/util"
 
 const processor = unified()
   .use(remarkParse)
@@ -32,7 +33,7 @@ export async function generatePages (dir: string, pages: string[]) {
     const file = await processor.process(await read(inPath))
     const moduleData: ModuleData = processorData.moduleData
     moduleData.imports = moduleData.imports || []
-    moduleData.viewName = page
+    moduleData.viewName = page.split("-").map((w, i) => i > 0 ? capitalize(w) : w).join("")
     const html = file.value.toString()
     // TODO: Proper fix to prevent munging embedded tags in code expressions
     const fixTags = html.replace(/&#x3C;/g, "<")
