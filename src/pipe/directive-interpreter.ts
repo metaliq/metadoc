@@ -11,12 +11,15 @@ export const directiveInterpreter: Plugin = function (this: Processor) {
     const processData = this.data()
     const moduleData: ModuleData = processData.moduleData = (processData.moduleData || {})
 
+    const removeNodes: Array<[Directive, Parent]> = []
+
     visit(root, (node, index, parent: Parent) => {
       if (["textDirective", "leafDirective", "containerDirective"].includes(node.type)) {
         const directive = node as Directive
 
         let isHtmlTag = false
 
+        // TODO: Shift this to frontmatter
         if (directive.name === "import") {
           moduleData.imports = moduleData.imports || []
           moduleData.imports.push(directive.attributes as Import)
@@ -26,17 +29,20 @@ export const directiveInterpreter: Plugin = function (this: Processor) {
         } else {
           isHtmlTag = true
           const data = directive.data || (directive.data = {})
-          const hast = h(directive.name, directive.attributes)
+          const hast = h(directive.name || "div", directive.attributes)
 
           data.hName = hast.tagName
           data.hProperties = hast.properties
         }
 
-        // if (!isHtmlTag) {
-        //   parent.children.splice(parent.children.indexOf(directive), 1)
-        //   console.log(parent.children)
-        // }
+        if (!isHtmlTag) {
+          removeNodes.push([directive, parent])
+        }
       }
     })
+
+    for (const [node, parent] of removeNodes) {
+      parent.children.splice(parent.children.indexOf(node), 1)
+    }
   }
 }
