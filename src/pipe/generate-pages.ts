@@ -12,6 +12,7 @@ import { directiveInterpreter } from "./directive-interpreter"
 import { Import, ModuleData } from "./types"
 import { remarkMetaCode } from "./remark-meta-code"
 import { capitalize } from "metaliq/lib/util/util"
+import { readdir, mkdir } from "fs/promises"
 
 const processor = unified()
   .use(remarkParse)
@@ -23,17 +24,26 @@ const processor = unified()
   .use(rehypeStringify)
   .use(rehypeSlug)
 
-export async function generatePages (dir: string, pages: string[]) {
+export async function generatePages (inDir: string, outDir: string) {
+  const filePaths = await readDirPaths(inDir)
+
   const processorData = processor.data()
-  for (const page of pages) {
-    const inPath = Path.join(dir, "content", `${page}.md`)
-    const outPath = Path.join(dir, "src", "gen", `${page}.ts`)
+  for (const inPath of filePaths) {
+    const subPath = Path.relative(inDir, inPath)
+    const outPath = Path.join(outDir, subPath).split(".").slice(0, -1).concat("ts").join(".")
+    await mkdir(Path.dirname(outPath), { recursive: true })
 
     processorData.moduleData = {}
     const file = await processor.process(await read(inPath))
     const moduleData: ModuleData = processorData.moduleData
     moduleData.imports = moduleData.imports || []
-    moduleData.viewName = page.split("-").map((w, i) => i > 0 ? capitalize(w) : w).join("")
+    moduleData.viewName = Path.basename(inPath)
+      // Remove extension
+      .replace(/\.[^/.]+$/, "")
+      // Change from kebab to camel case
+      .split("-")
+      .map((w, i) => i > 0 ? capitalize(w) : w)
+      .join("")
     const html = file.value.toString()
     // TODO: Proper fix to prevent munging embedded tags in code expressions
     const fixTags = html.replace(/&#x3C;/g, "<")
@@ -60,4 +70,21 @@ const htmlTs = (html: string, moduleData: ModuleData) => {
     \`
   `
   return ts
+}
+
+const readDirPaths = async (dir: string) => {
+  let paths: string[] = []
+  const files = await readdir(dir, { withFileTypes: true })
+
+  for (const file of files) {
+    const path = Path.join(dir, file.name)
+    if (file.isDirectory()) {
+      const childFileNames = await readDirPaths(path)
+      paths = [...paths, ...childFileNames]
+    } else {
+      paths.push(path)
+    }
+  }
+
+  return paths
 }

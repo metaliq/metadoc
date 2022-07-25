@@ -11,8 +11,6 @@ const directiveEx = /^:/
 
 export const remarkMetaCode: Plugin = function () {
   return (tree, file) => {
-    console.log(`Processing code expressions in ${file.basename}`)
-
     visit(tree, (node, index, parent: Parent) => {
       if (is(node, ["code", "inlineCode"])) {
         const code = node as Code

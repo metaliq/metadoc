@@ -1,14 +1,11 @@
-import { readFile, mkdir } from "fs/promises"
-import { join } from "path"
+import { mkdir } from "fs/promises"
 import { generatePages } from "../pipe/generate-pages"
 
 async function main () {
-  const dir = process.argv.pop()
-  await mkdir(join(dir, "src", "gen"))
-  const json = await readFile(join(dir, "content", "index.json"), "utf8")
-  const index = JSON.parse(json)
-  const { nav } = index as { nav: string[] }
-  await generatePages(dir, nav)
+  const outDir = process.argv.pop()
+  const inDir = process.argv.pop()
+  await mkdir(outDir)
+  await generatePages(inDir, outDir)
 }
 
 main().catch(console.error)

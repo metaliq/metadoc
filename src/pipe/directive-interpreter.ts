@@ -3,11 +3,10 @@ import { visit } from "unist-util-visit"
 import { Directive } from "mdast-util-directive"
 import { h } from "hastscript"
 import { Import, ModuleData } from "./types"
-import { Parent } from "mdast"
+import { Parent } from "@types/unist"
 
 export const directiveInterpreter: Plugin = function (this: Processor) {
   return (root, file) => {
-    console.log(`Processing directives in file: ${file.basename}`)
     const processData = this.data()
     const moduleData: ModuleData = processData.moduleData = (processData.moduleData || {})
 
