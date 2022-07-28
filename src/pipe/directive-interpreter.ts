@@ -3,7 +3,7 @@ import { visit } from "unist-util-visit"
 import { Directive } from "mdast-util-directive"
 import { h } from "hastscript"
 import { Import, ModuleData } from "./types"
-import { Parent } from "@types/unist"
+import { Parent } from "unist"
 
 export const directiveInterpreter: Plugin = function (this: Processor) {
   return (root, file) => {
