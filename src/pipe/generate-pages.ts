@@ -65,12 +65,16 @@ const htmlTs = (html: string, moduleData: ModuleData) => {
   const ts = dedent`
     ${importsTs}
 
-    export const ${moduleData.viewName}: MetaView<${moduleData.metaType || "any"}> = (${moduleData.metaName ?? ""}) => html\`
+    export const ${moduleData.viewName}: MetaView<${moduleData.metaType || "any"}> = (${valueMetaParams(moduleData.metaName)}) => html\`
       ${html.trim()}
     \`
   `
   return ts
 }
+
+const valueMetaParams = (name: string) => name
+  ? `${name}, m$${capitalize(name)}`
+  : ""
 
 const readDirPaths = async (dir: string) => {
   let paths: string[] = []
