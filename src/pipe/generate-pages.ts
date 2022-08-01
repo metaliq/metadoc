@@ -56,6 +56,7 @@ export async function generatePages (inDir: string, outDir: string) {
 const htmlTs = (html: string, moduleData: ModuleData) => {
   const imports: Import[] = [
     { id: "html", from: "lit" },
+    { id: "Meta", from: "metaliq" },
     { id: "MetaView", from: "metaliq/lib/policies/presentation/presentation" },
     ...moduleData.imports
   ]
