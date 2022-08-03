@@ -11,13 +11,13 @@
     "clean": "rm -rf ./lib",
     "dev": "npm run clean && tsc --watch",
     "kh-clean": "rm -rf ~/dev/klaud-haus/src/gen",
-    "kh-gen": "node --experimental-specifier-resolution=node ./bin/cli-es6.js ~/dev/klaud-haus/content ~/dev/klaud-haus/src/gen",
-    "test": "npm run kh-clean && npm run kh-gen"
+    "test": "echo 'Testing 123'"
   },
   "author": "tim@klaud.haus",
   "license": "MIT",
   "dependencies": {
     "@types/unist": "^2.0.6",
+    "chokidar": "^3.5.3",
     "commander": "^9.3.0",
     "hastscript": "^7.0.2",
     "mdast-builder": "^1.1.1",

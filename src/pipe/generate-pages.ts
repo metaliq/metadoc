@@ -12,7 +12,8 @@ import { directiveInterpreter } from "./directive-interpreter"
 import { Import, ModuleData } from "./types"
 import { remarkMetaCode } from "./remark-meta-code"
 import { capitalize } from "metaliq/lib/util/util"
-import { readdir, mkdir } from "fs/promises"
+import { mkdir, readdir } from "fs/promises"
+import Watcher from "chokidar"
 
 const processor = unified()
   .use(remarkParse)
@@ -27,30 +28,46 @@ const processor = unified()
 export async function generatePages (inDir: string, outDir: string) {
   const filePaths = await readDirPaths(inDir)
 
-  const processorData = processor.data()
   for (const inPath of filePaths) {
-    const subPath = Path.relative(inDir, inPath)
-    const outPath = Path.join(outDir, subPath).split(".").slice(0, -1).concat("ts").join(".")
-    await mkdir(Path.dirname(outPath), { recursive: true })
-
-    processorData.moduleData = {}
-    const file = await processor.process(await read(inPath))
-    const moduleData: ModuleData = processorData.moduleData
-    moduleData.imports = moduleData.imports || []
-    moduleData.viewName = Path.basename(inPath)
-      // Remove extension
-      .replace(/\.[^/.]+$/, "")
-      // Change from kebab to camel case
-      .split("-")
-      .map((w, i) => i > 0 ? capitalize(w) : w)
-      .join("")
-    const html = file.value.toString()
-    // TODO: Proper fix to prevent munging embedded tags in code expressions
-    const fixTags = html.replace(/&#x3C;/g, "<")
-    const value = htmlTs(fixTags, moduleData)
-
-    await write({ path: outPath, value })
+    await generatePage(inDir, outDir, inPath)
   }
+}
+
+export function watchAndGenerate (inDir: string, outDir: string) {
+  const onChange = (path: string) => {
+    if (path.match(/\.md$/)) {
+      generatePage(inDir, outDir, path).catch(console.error)
+    }
+  }
+
+  Watcher.watch(inDir)
+    .on("change", onChange)
+    .on("add", onChange)
+}
+
+export async function generatePage (inDir: string, outDir: string, inPath: string) {
+  const subPath = Path.relative(inDir, inPath)
+  const outPath = Path.join(outDir, subPath).split(".").slice(0, -1).concat("ts").join(".")
+  await mkdir(Path.dirname(outPath), { recursive: true })
+
+  const processorData = processor.data()
+  processorData.moduleData = {}
+  const file = await processor.process(await read(inPath))
+  const moduleData: ModuleData = processorData.moduleData
+  moduleData.imports = moduleData.imports || []
+  moduleData.viewName = Path.basename(inPath)
+    // Remove extension
+    .replace(/\.[^/.]+$/, "")
+    // Change from kebab to camel case
+    .split("-")
+    .map((w, i) => i > 0 ? capitalize(w) : w)
+    .join("")
+  const html = file.value.toString()
+  // TODO: Proper fix to prevent munging embedded tags in code expressions
+  const fixTags = html.replace(/&#x3C;/g, "<")
+  const value = htmlTs(fixTags, moduleData)
+
+  await write({ path: outPath, value })
 }
 
 const htmlTs = (html: string, moduleData: ModuleData) => {
