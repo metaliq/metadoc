@@ -33,14 +33,15 @@ export async function generatePages (inDir: string, outDir: string) {
   }
 }
 
-export function watchAndGenerate (inDir: string, outDir: string) {
+export async function watchAndGenerate (inDir: string, outDir: string) {
   const onChange = (path: string) => {
     if (path.match(/\.md$/)) {
       generatePage(inDir, outDir, path).catch(console.error)
     }
   }
 
-  Watcher.watch(inDir)
+  await generatePages(inDir, outDir)
+  Watcher.watch(inDir, { ignoreInitial: true })
     .on("change", onChange)
     .on("add", onChange)
 }

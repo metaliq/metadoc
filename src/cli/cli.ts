@@ -20,7 +20,7 @@ console.log(`Running metadoc on ${inDir} to ${outDir} ${options.watch ? "and wat
 async function main () {
   await mkdir(outDir, { recursive: true })
   if (options.watch) {
-    watchAndGenerate(inDir, outDir)
+    await watchAndGenerate(inDir, outDir)
   } else {
     await generatePages(inDir, outDir)
   }

@@ -10,7 +10,6 @@
   "scripts": {
     "clean": "rm -rf ./lib",
     "dev": "npm run clean && tsc --watch",
-    "kh-clean": "rm -rf ~/dev/klaud-haus/src/gen",
     "test": "echo 'Testing 123'"
   },
   "author": "tim@klaud.haus",
