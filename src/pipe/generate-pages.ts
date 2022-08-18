@@ -92,7 +92,7 @@ const htmlTs = (html: string, moduleData: ModuleData) => {
 }
 
 const valueMetaParams = (name: string) => name
-  ? `${name}, m$${capitalize(name)}`
+  ? `${name}, ${name}$`
   : ""
 
 const readDirPaths = async (dir: string) => {
