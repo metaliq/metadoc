@@ -11,7 +11,7 @@ import rehypeRaw from "rehype-raw"
 import { directiveInterpreter } from "./directive-interpreter"
 import { Import, ModuleData } from "./types"
 import { remarkMetaCode } from "./remark-meta-code"
-import { capitalize } from "metaliq/lib/util/util"
+import { capitalize } from "@metaliq/util"
 import { mkdir, readdir } from "fs/promises"
 import Watcher from "chokidar"
 
