@@ -75,7 +75,7 @@ const htmlTs = (html: string, moduleData: ModuleData) => {
   const imports: Import[] = [
     { id: "html", from: "lit" },
     { id: "Meta", from: "metaliq" },
-    { id: "MetaView", from: "metaliq/lib/policies/presentation/presentation" },
+    { id: "MetaView", from: "@metaliq/presentation" },
     ...moduleData.imports
   ]
 
