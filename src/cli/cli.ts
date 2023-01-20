@@ -1,11 +1,22 @@
 import { mkdir } from "fs/promises"
+import { readFileSync } from "fs"
 import { generatePages, watchAndGenerate } from "../pipe/generate-pages"
 import { Command } from "commander"
+import { resolve } from "path"
+
+const moduleFileParts = import.meta.url.split("/")
+const moduleFileFirstPartNum = moduleFileParts.lastIndexOf("") + 1
+const moduleFilePartsTrimmed = moduleFileParts.slice(moduleFileFirstPartNum)
+const moduleFile = "/" + moduleFilePartsTrimmed.join("/")
+
+const pkgFile = resolve(moduleFile, "../../../package.json")
+
+const pkg = JSON.parse(readFileSync(pkgFile, "utf8"))
 
 const program = new Command()
 program
   .name("metadoc")
-  .version("0.4.0")
+  .version(pkg.version, "-v, --version")
   .argument("<inDir>", "input directory")
   .argument("<outDir>", "output directory")
   .option("-w, --watch", "watch for changes")

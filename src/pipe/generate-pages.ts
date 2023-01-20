@@ -79,7 +79,10 @@ const htmlTs = (html: string, moduleData: ModuleData) => {
     ...moduleData.imports
   ]
 
-  const importsTs = imports.map(i => `import { ${i.id} } from "${i.from}"`).join("\n")
+  const importName = (id: string) => id.match(/^\*/)
+    ? `* as ${id.slice(1)}`
+    : `{ ${id} }`
+  const importsTs = imports.map(i => `import ${importName(i.id)} from "${i.from}"`).join("\n")
 
   const ts = dedent`
     ${importsTs}
