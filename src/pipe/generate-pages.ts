@@ -9,14 +9,20 @@ import Path from "path"
 import { dedent } from "ts-dedent"
 import rehypeRaw from "rehype-raw"
 import { directiveInterpreter } from "./directive-interpreter"
-import { Import, ModuleData } from "./types"
+import { ModuleImport, ModuleData, ModuleModel } from "./types"
 import { remarkMetaCode } from "./remark-meta-code"
 import { capitalize } from "@metaliq/util"
 import { mkdir, readdir } from "fs/promises"
 import Watcher from "chokidar"
+import remarkFrontmatter from "remark-frontmatter"
+import { matter } from "vfile-matter"
 
 const processor = unified()
   .use(remarkParse)
+  .use(remarkFrontmatter)
+  .use(() => (tree, file) => {
+    matter(file)
+  })
   .use(remarkMetaCode)
   .use(remarkDirective)
   .use(directiveInterpreter)
@@ -54,15 +60,42 @@ export async function generatePage (inDir: string, outDir: string, inPath: strin
   const processorData = processor.data()
   processorData.moduleData = {}
   const file = await processor.process(await read(inPath))
-  const moduleData: ModuleData = processorData.moduleData
-  moduleData.imports = moduleData.imports || []
-  moduleData.viewName = Path.basename(inPath)
+  const frontmatter = file.data?.matter as { import?: string | string[], model?: string | string [] }
+  const viewName = Path.basename(inPath)
     // Remove extension
     .replace(/\.[^/.]+$/, "")
     // Change from kebab to camel case
     .split("-")
     .map((w, i) => i > 0 ? capitalize(w) : w)
     .join("")
+
+  const model: ModuleModel = frontmatter.model
+    ? typeof frontmatter.model === "string"
+      ? { type: frontmatter.model, name: "v", name$: "$" }
+      : { type: frontmatter.model[0], name: frontmatter.model[1], name$: frontmatter.model[1] + "$" }
+    : { type: "any", name: "v", name$: "$" }
+
+  const moduleData: ModuleData = {
+    viewName,
+    model,
+    imports: []
+  }
+
+  for (const [path, members] of Object.entries(frontmatter?.import || {})) {
+    const importPath = path.match(/^\//)
+      // TODO: Support nested content paths
+      ? `../..${path}`
+      : path
+    const importMembers = Array.isArray(members)
+      ? `{ ${members.join(", ")} }`
+      : members
+
+    moduleData.imports.push({
+      id: importMembers,
+      from: importPath
+    })
+  }
+
   const html = file.value.toString()
   // TODO: Proper fix to prevent munging embedded tags in code expressions
   const fixTags = html.replace(/&#x3C;/g, "<")
@@ -72,31 +105,25 @@ export async function generatePage (inDir: string, outDir: string, inPath: strin
 }
 
 const htmlTs = (html: string, moduleData: ModuleData) => {
-  const imports: Import[] = [
-    { id: "html", from: "lit" },
-    { id: "Meta", from: "metaliq" },
-    { id: "MetaView", from: "@metaliq/presentation" },
+  const imports: ModuleImport[] = [
+    { id: "{ html }", from: "lit" },
+    { id: "{ MetaView }", from: "@metaliq/presentation" },
     ...moduleData.imports
   ]
 
-  const importName = (id: string) => id.match(/^\*/)
-    ? `* as ${id.slice(1)}`
-    : `{ ${id} }`
-  const importsTs = imports.map(i => `import ${importName(i.id)} from "${i.from}"`).join("\n")
+  const importsTs = imports.map(i => `import ${i.id} from "${i.from}"`).join("\n")
 
   const ts = dedent`
     ${importsTs}
 
-    export const ${moduleData.viewName}: MetaView<${moduleData.metaType || "any"}> = (${valueMetaParams(moduleData.metaName)}) => html\`
+    export const ${moduleData.viewName}: MetaView<${moduleData.model.type || "any"}> = (${moduleData.model.name}, ${moduleData.model.name$}) => html\`
       ${html.trim()}
     \`
+    
   `
+  // Preserve empty last line in template above
   return ts
 }
-
-const valueMetaParams = (name: string) => name
-  ? `${name}, ${name}$`
-  : ""
 
 const readDirPaths = async (dir: string) => {
   let paths: string[] = []
