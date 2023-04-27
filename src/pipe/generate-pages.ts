@@ -101,9 +101,9 @@ export async function generatePage (inDir: string, outDir: string, inPath: strin
   }
 
   const html = file.value.toString()
-  // TODO: Proper fix to prevent munging embedded tags in code expressions
-  const fixTags = html.replace(/&#x3C;/g, "<")
-  const value = htmlTs(fixTags, moduleData)
+    .replace(/&#x3C;/g, "<") // TODO: Proper fix to prevent munging embedded tags in code expressions
+    .replace(/`/gm, "\\`") // Escape any remaining backtick characters, for example within code blocks
+  const value = htmlTs(html, moduleData)
 
   await write({ path: outPath, value })
 }
