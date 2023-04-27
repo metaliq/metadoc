@@ -31,17 +31,21 @@ const processor = unified()
   .use(rehypeStringify)
   .use(rehypeSlug)
 
+const sourceEx = /\.md$/
+
 export async function generatePages (inDir: string, outDir: string) {
   const filePaths = await readDirPaths(inDir)
 
   for (const inPath of filePaths) {
-    await generatePage(inDir, outDir, inPath)
+    if (inPath.match(sourceEx)) {
+      await generatePage(inDir, outDir, inPath)
+    }
   }
 }
 
 export async function watchAndGenerate (inDir: string, outDir: string) {
   const onChange = (path: string) => {
-    if (path.match(/\.md$/)) {
+    if (path.match(sourceEx)) {
       generatePage(inDir, outDir, path).catch(console.error)
     }
   }
