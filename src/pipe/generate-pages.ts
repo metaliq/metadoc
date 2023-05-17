@@ -38,7 +38,12 @@ export async function generatePages (inDir: string, outDir: string) {
 
   for (const inPath of filePaths) {
     if (inPath.match(sourceEx)) {
-      await generatePage(inDir, outDir, inPath)
+      try {
+        await generatePage(inDir, outDir, inPath)
+      } catch (e) {
+        console.error(`ERROR generating page ${inPath}\n`)
+        throw e
+      }
     }
   }
 }
