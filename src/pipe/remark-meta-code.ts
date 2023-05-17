@@ -8,10 +8,12 @@ import { as } from "../util/util"
 // Check for expression-within-literal syntax
 const codeExprEx = /^\$\{/
 
-const divEx = /^\.\S*/
+const divEx = /^\./
 
 export const remarkMetaCode: Plugin = function () {
   return (tree, file) => {
+    let tagLevel: number = 0
+
     visit(tree, (node, index, parent: Parent) => {
       if (is(node, ["code", "inlineCode"])) {
         const code = as<{ value: string }>(node)
@@ -25,10 +27,22 @@ export const remarkMetaCode: Plugin = function () {
         const children = prop(node, "children")
         const onlyChild = Array.isArray(children) && children.length === 1 && children[0]
         if (onlyChild?.type === "inlineCode" && onlyChild?.value?.match(divEx)) {
-          const parts = onlyChild.value.split(".").filter(Boolean)
-          const htmlValue = parts.length
-            ? `<div class="${parts.join(" ")}">`
-            : "</div>"
+          const tags = onlyChild.value.split(" ").filter(Boolean)
+          const htmls: string[] = []
+          for (const tag of tags) {
+            if (tag.match(/^\.*$/)) { // Only dot(s) - closing tag
+              const toLevel = tag.length - 1
+              while (tagLevel > toLevel) {
+                htmls.push("</div>")
+                tagLevel--
+              }
+            } else {
+              const parts = tag.split(".").filter(Boolean)
+              htmls.push(`<div class="${parts.join(" ")}">`)
+              tagLevel++
+            }
+          }
+          const htmlValue = htmls.join("\n")
           const htmlNode = html(htmlValue)
           parent.children.splice(parent.children.indexOf(node), 1, htmlNode)
         }
