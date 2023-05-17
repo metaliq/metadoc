@@ -90,10 +90,13 @@ export async function generatePage (inDir: string, outDir: string, inPath: strin
     imports: []
   }
 
+  // Create a relative path to `src`
+  const nestedDepth = subPath.split("/").filter(Boolean).length
+  const src = Array.from({ length: nestedDepth + 1 }, () => "..").join("/")
+
   for (const [path, members] of Object.entries(frontmatter?.import || {})) {
     const importPath = path.match(/^\//)
-      // TODO: Support nested content paths
-      ? `../..${path}`
+      ? src + path
       : path
     const importMembers = Array.isArray(members)
       ? `{ ${members.join(", ")} }`
